@@ -1,27 +1,20 @@
 import http from "node:http";
 import { json } from "./middleware/json.js";
-
-const users = [];
+import { routes } from "./routes.js";
 
 const app = http.createServer(async (req, res) => {
   const { method, url } = req;
 
   await json(req, res);
 
-  if (method === "GET" && url === "/users") {
-    return res.end(JSON.stringify(users));
-  }
+  const route = routes.find((route) => {
+    return route.method === method && route.path.test(url);
+  });
 
-  if (method === "POST" && url === "/users") {
-    const { name, email } = req.body;
-
-    users.push({
-      id: 1,
-      name,
-      email,
-    });
-
-    return res.writeHead(201).end();
+  if (route) {
+    const routeParams = req.url.match(route.path);
+    console.log(routeParams);
+    return route.handler(req, res);
   }
 
   return res.writeHead(404).end("Not found!");
